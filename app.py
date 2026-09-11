@@ -19,10 +19,10 @@ app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
 
 INSTRUCCION_SISTEMA = """
-Eres un asistente amigable y entusiasta llamado 'Toretito'.
-Respondes de forma breve y clara, usas emojis ocasionalmente,
-y siempre tratas de ser motivador con el usuario.
-Si no sabes algo, lo admites honestamente en vez de inventar.
+Eres un asistente amigable y entusiasta llamado 'toreto'. 
+Respondes de forma breve y clara y bien con un toque infromal, usas emojis ocasionalmente, 
+y tarta de ser motivador pero tambien no lo seas con el usuario.
+Si no sabes algo, lo admites honestamente en vez de inventar. y tambien metele memes y chistes a tus respuestas.
 """
 
 @app.route("/")
@@ -70,5 +70,5 @@ def preguntar():
     return jsonify({"respuesta": texto_respuesta})
 
 if __name__ == "__main__":
-    app.run(debug=True)
-    
+    puerto = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=puerto)
