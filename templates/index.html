@@ -110,6 +110,32 @@
   #boton-imagen:hover {
     background: #333;
   }
+#boton-mic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  cursor: pointer;
+  font-size: 20px;
+  flex-shrink: 0;
+  color: #eee;
+}
+#boton-mic:hover {
+  background: #333;
+}
+#boton-mic.grabando {
+  background: #d63a3a;
+  animation: pulso 1s infinite;
+}
+@keyframes pulso {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
 </style>
 </head>
 <body>
@@ -119,6 +145,7 @@
   <div id="vista-previa" style="display:none;"></div>
   <form id="form">
     <label for="imagen" id="boton-imagen" title="Adjuntar imagen">📎</label>
+    <button type="button" id="boton-mic" title="Hablar">🎤</button>
     <input type="file" id="imagen" accept="image/*" style="display:none;" />
     <input id="pregunta" autocomplete="off" placeholder="Escribe un mensaje..." />
     <button id="enviar" type="submit" title="Enviar">➤</button>
@@ -131,6 +158,47 @@ const form = document.getElementById('form');
 const input = document.getElementById('pregunta');
 const inputImagen = document.getElementById('imagen');
 const vistaPrevia = document.getElementById('vista-previa');
+const botonMic = document.getElementById('boton-mic');
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let reconocimiento = null;
+let grabando = false;
+
+if (SpeechRecognition) {
+  reconocimiento = new SpeechRecognition();
+  reconocimiento.lang = 'es-ES';
+  reconocimiento.continuous = false;
+  reconocimiento.interimResults = false;
+
+  reconocimiento.onresult = (evento) => {
+    const texto = evento.results[0][0].transcript;
+    input.value = texto;
+  };
+
+  reconocimiento.onerror = (evento) => {
+    console.error('Error de reconocimiento de voz:', evento.error);
+    grabando = false;
+    botonMic.classList.remove('grabando');
+  };
+
+  reconocimiento.onend = () => {
+    grabando = false;
+    botonMic.classList.remove('grabando');
+  };
+
+  botonMic.addEventListener('click', () => {
+    if (grabando) {
+      reconocimiento.stop();
+    } else {
+      reconocimiento.start();
+      grabando = true;
+      botonMic.classList.add('grabando');
+    }
+  });
+} else {
+  botonMic.style.display = 'none';
+  console.warn('Este navegador no soporta reconocimiento de voz.');
+}
 
 input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
@@ -143,7 +211,7 @@ function agregarMensaje(texto, clase, urlImagen) {
   const div = document.createElement('div');
   div.className = 'msg ' + clase;
 
-  if (urlImagen) {
+    if (urlImagen) {
     const img = document.createElement('img');
     img.src = urlImagen;
     img.style.maxWidth = '100%';
@@ -161,6 +229,13 @@ function agregarMensaje(texto, clase, urlImagen) {
 
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
+}
+function hablar(texto) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(texto);
+  utterance.lang = 'es-ES';
+  window.speechSynthesis.speak(utterance);
 }
 
 function leerImagenComoBase64(archivo) {
@@ -223,6 +298,7 @@ form.addEventListener('submit', async (e) => {
   });
   const data = await res.json();
   agregarMensaje(data.respuesta, 'bot');
+  hablar(data.respuesta);
 });
 </script>
 </body>
